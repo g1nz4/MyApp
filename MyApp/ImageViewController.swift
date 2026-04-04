@@ -3,6 +3,7 @@ import UIKit
 final class ImageViewController: UIViewController {
 
     private let viewModel: ImageViewModel
+    private var selectedData: Data?
     
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .plain)
@@ -14,7 +15,6 @@ final class ImageViewController: UIViewController {
         table.separatorStyle = .none
         table.dataSource = self
         table.delegate = self
-        table.estimatedRowHeight = 200.0
         
         return table
     }()
@@ -24,8 +24,14 @@ final class ImageViewController: UIViewController {
             for: .documentDirectory,
             in: .userDomainMask)[0]
         let storage = ImageStorage(directory: directoryURL)
-        self.viewModel = ImageViewModel(storage: storage)
+        self.viewModel = ImageViewModel(storage: storage, directory: directoryURL)
         super.init(nibName: nil, bundle: nil)
+    }
+    
+    init(storage: ImageStorageProtocol, directory: URL, title: String) {
+        self.viewModel = ImageViewModel(storage: storage, directory: directory)
+        super.init(nibName: nil, bundle: nil)
+        self.title = title
     }
     
     required init?(coder: NSCoder) {
@@ -43,12 +49,20 @@ final class ImageViewController: UIViewController {
     }
     
     private func setupNavigationBar() {
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "Add",
+        let addImageButton = UIBarButtonItem(
+            image: UIImage(systemName: "plus"),
             style: .plain,
             target: self,
             action: #selector(addTapped)
         )
+        
+        let addFolderButton = UIBarButtonItem(
+            image: UIImage(systemName: "folder.badge.plus"),
+            style: .plain,
+            target: self,
+            action: #selector(addFolderTapped)
+        )
+        navigationItem.rightBarButtonItems = [addImageButton, addFolderButton]
     }
     
     private func setupUI() {
@@ -64,37 +78,44 @@ final class ImageViewController: UIViewController {
     }
     
     private func bindingViewModel() {
-        viewModel.onLoadData = { [weak self] _ in
+        viewModel.onLoadData = { [weak self] _, _ in
             self?.tableView.reloadData()
         }
         
         viewModel.onInsertItem = { [weak self] index in
             guard let self = self else { return }
             
-            let indexPath = IndexPath(row: index, section: 0)
-            self.tableView.insertRows(at: [indexPath], with: .bottom)
+            let row = self.viewModel.folders.count + index
+            let indexPath = IndexPath(row: row, section: 0)
+            self.tableView.insertRows(at: [indexPath], with: .automatic)
         }
         
         viewModel.onDeleteItem = { [weak self] index in
             guard let self = self else { return }
             
-            let indexPath = IndexPath(row: index, section: 0)
+            let row = self.viewModel.folders.count + index
+            let indexPath = IndexPath(row: row, section: 0)
             self.tableView.deleteRows(at: [indexPath], with: .automatic)
         }
         
         viewModel.onError = { [weak self] message in
-            self?.showAlert(message: message)
+            guard let self = self else { return }
+            
+            TextPicker.shared.showError(in: self, with: message)
         }
     }
     
-    private func showAlert(message: String) {
-        let alert = UIAlertController(
-            title: "Oops",
-            message: message,
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        present(alert, animated: true)
+    private func showAlertForAddNewImage() {
+        guard let data = selectedData else { return }
+        
+        TextPicker.shared.showAddFolderOrImage(
+            in: self,
+            with: .image) { [weak self] title in
+                guard let self = self else {return}
+                
+                self.viewModel.add(imageData: data, name: title)
+                self.selectedData = nil
+        }
     }
     
     @objc private func addTapped() {
@@ -103,35 +124,75 @@ final class ImageViewController: UIViewController {
         picker.sourceType = .photoLibrary
         present(picker, animated: true)
     }
+    
+    @objc private func addFolderTapped() {
+        TextPicker.shared.showAddFolderOrImage(
+            in: self,
+            with: .folder) { [weak self] title in
+                self?.viewModel.addFolder(name: title)
+        }
+    }
 }
 
 extension ImageViewController: UITableViewDataSource {
-   
+    
     func tableView(
         _ tableView: UITableView,
         numberOfRowsInSection section: Int
     ) -> Int {
-        viewModel.images.count
+        viewModel.folders.count + viewModel.images.count
     }
     
     func tableView(
         _ tableView: UITableView,
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: TableViewCell.reuseIdentifier,
-            for: indexPath) as? TableViewCell else {
-            return UITableViewCell()
+        
+        if indexPath.row < viewModel.folders.count {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "FolderCell") ?? UITableViewCell(style: .subtitle, reuseIdentifier: "FolderCell")
+            let folder = viewModel.folders[indexPath.row]
+            cell.textLabel?.text = folder.name
+            cell.accessoryType = .disclosureIndicator
+            
+            return cell
+            
+        } else {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: TableViewCell.reuseIdentifier,
+                for: indexPath) as? TableViewCell else {
+                return UITableViewCell()
+            }
+            let index = indexPath.row - viewModel.folders.count
+            let imageData = viewModel.images[index]
+            cell.configureCell(with: imageData)
+            
+            return cell
         }
-        
-        let imageData = viewModel.images[indexPath.row]
-        cell.configureCell(with: imageData.url)
-        
-        return cell
     }
 }
-
 extension ImageViewController: UITableViewDelegate {
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        if indexPath.row < viewModel.folders.count {
+            let folder = viewModel.folders[indexPath.row]
+            let storage = viewModel.instanceStorage
+            let vc = ImageViewController(
+                storage: storage,
+                directory: folder.url,
+                title: folder.name
+            )
+            navigationController?.pushViewController(vc, animated: true)
+            
+        } else {
+            let index = indexPath.row - viewModel.folders.count
+            let image = viewModel.images[index]
+            let detailsVC = DetailsViewController(image: image)
+            detailsVC.modalPresentationStyle = .formSheet
+            navigationController?.present(detailsVC, animated: true)
+        }
+    }
     
     func tableView(
         _ tableView: UITableView,
@@ -160,7 +221,7 @@ extension ImageViewController: UIImagePickerControllerDelegate, UINavigationCont
             
             return
         }
-
+        
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self,
                   let data = image.jpegData(compressionQuality: 1.0) else {
@@ -171,9 +232,12 @@ extension ImageViewController: UIImagePickerControllerDelegate, UINavigationCont
                 return
             }
             
+            selectedData = data
+            
             DispatchQueue.main.async {
-                self.viewModel.add(imageData: data)
-                picker.dismiss(animated: true)
+                picker.dismiss(animated: true) { [weak self] in
+                    self?.showAlertForAddNewImage()
+                }
             }
         }
     }

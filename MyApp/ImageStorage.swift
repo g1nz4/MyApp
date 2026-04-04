@@ -1,20 +1,25 @@
 import Foundation
 
 protocol ImageStorageProtocol {
-    func loadImages() throws -> [URL]
-    func addImage(imageData: Data) throws -> URL
+    var rootDirectory: URL { get }
+    
+    func loadImages(in directory: URL) throws -> [URL]
+    func addImage(imageData: Data, name: String?, in directory: URL) throws -> URL
     func deleteImage(at url: URL) throws
+    func addFolder(name: String, in directory: URL) throws -> URL
 }
 
 final class ImageStorage: ImageStorageProtocol {
    
-    private let directory: URL
+    let rootDirectory: URL
     
     init(directory: URL) {
-        self.directory = directory
+        self.rootDirectory = directory
+        
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
     
-    func loadImages() throws -> [URL] {
+    func loadImages(in directory: URL) throws -> [URL] {
         let urls = try FileManager.default.contentsOfDirectory(
             at: directory,
             includingPropertiesForKeys: nil,
@@ -26,9 +31,20 @@ final class ImageStorage: ImageStorageProtocol {
         }
     }
     
-    func addImage(imageData: Data) throws -> URL {
-        let imageName = "image_\(UUID().uuidString).jpg"
-        let url = directory.appendingPathComponent(imageName)
+    func addImage(imageData: Data, name: String?, in directory: URL) throws -> URL {
+        let id = UUID().uuidString
+        var baseName: String
+        
+        if let name = name, !name.isEmpty {
+            baseName = (name as NSString).deletingPathExtension
+        } else {
+            baseName = "image_\(id)"
+        }
+        
+        baseName = baseName.replacingOccurrences(of: " ", with: "_")
+        
+        let fileName = "\(baseName).jpg"
+        let url = directory.appendingPathComponent(fileName)
         try imageData.write(to: url)
         
         return url
@@ -36,5 +52,14 @@ final class ImageStorage: ImageStorageProtocol {
     
     func deleteImage(at url: URL) throws {
         try FileManager.default.removeItem(at: url)
+    }
+    
+    func addFolder(name: String, in directory: URL) throws -> URL {
+        let n = name.replacingOccurrences(of: "/", with: "_")
+        let folderURL = directory.appendingPathComponent(n, isDirectory: true)
+
+        try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
+        
+        return folderURL
     }
 }

@@ -4,9 +4,35 @@ final class TableViewCell: UITableViewCell {
     
     static let reuseIdentifier = "TableViewcell"
     
-    private lazy var image: UIImageView = {
+    private lazy var titleLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .black
+        label.numberOfLines = 0
+        label.font = .systemFont(ofSize: 18.0, weight: .semibold)
+        
+        return label
+    }()
+    
+    private lazy var dateLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .secondaryLabel
+        label.font = .systemFont(ofSize: 16.0, weight: .medium)
+        label.textAlignment = .left
+        
+        return label
+    }()
+    
+    private lazy var sizeLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .secondaryLabel
+        label.font = .systemFont(ofSize: 16.0, weight: .medium)
+        label.textAlignment = .right
+        
+        return label
+    }()
+    
+    private lazy var fileImageView: UIImageView = {
         let view = UIImageView()
-        view.translatesAutoresizingMaskIntoConstraints = false
         view.contentMode = .scaleAspectFit
         
         return view
@@ -21,27 +47,56 @@ final class TableViewCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configureCell(with url: URL) {
-        image.image = nil
+    func configureCell(with image: Image) {
+        fileImageView.image = nil
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-           let loadedImage = UIImage(contentsOfFile: url.path)
+            let loadedImage = UIImage(contentsOfFile: image.url.path)
             
             DispatchQueue.main.async {
-                self?.image.image = loadedImage
+                self?.fileImageView.image = loadedImage
             }
         }
+        
+        titleLabel.text = image.userTitle
+        
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        dateLabel.text = formatter.string(from: image.date)
+        
+        let sizeMb = image.size / (1024 * 1024)
+        sizeLabel.text = String(format: "%.2f Mb", sizeMb)
     }
     
     private func setupUI() {
-        addSubview(image)
+        [fileImageView, titleLabel, dateLabel, sizeLabel].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            addSubview($0)
+        }
         
         NSLayoutConstraint.activate([
-            image.topAnchor.constraint(equalTo: topAnchor, constant: 10.0),
-            image.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10.0),
-            image.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10.0),
-            image.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10.0),
-            image.heightAnchor.constraint(equalToConstant: 200.0)
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 10.0),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10.0),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10.0),
+            titleLabel.heightAnchor.constraint(equalToConstant: 30.0),
+            
+            fileImageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10.0),
+            fileImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10.0),
+            fileImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10.0),
+            fileImageView.heightAnchor.constraint(equalToConstant: 200.0),
+            
+            dateLabel.topAnchor.constraint(equalTo: fileImageView.bottomAnchor, constant: 10.0),
+            dateLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10.0),
+            dateLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10.0),
+            dateLabel.widthAnchor.constraint(equalToConstant: 150.0),
+            dateLabel.heightAnchor.constraint(equalToConstant: 30.0),
+            
+            sizeLabel.topAnchor.constraint(equalTo: fileImageView.bottomAnchor, constant: 10.0),
+            sizeLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10.0),
+            sizeLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10.0),
+            sizeLabel.widthAnchor.constraint(equalToConstant: 100.0),
+            sizeLabel.heightAnchor.constraint(equalToConstant: 30.0)
         ])
     }
 }
