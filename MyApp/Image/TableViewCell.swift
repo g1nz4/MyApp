@@ -8,6 +8,7 @@ final class TableViewCell: UITableViewCell {
         let label = UILabel()
         label.textColor = .black
         label.numberOfLines = 0
+        label.textAlignment = .left
         label.font = .systemFont(ofSize: 18.0, weight: .semibold)
         
         return label
@@ -76,15 +77,16 @@ final class TableViewCell: UITableViewCell {
         }
         
         NSLayoutConstraint.activate([
+            
             titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 10.0),
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10.0),
             titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10.0),
             titleLabel.heightAnchor.constraint(equalToConstant: 30.0),
             
-            fileImageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10.0),
-            fileImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10.0),
-            fileImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10.0),
-            fileImageView.heightAnchor.constraint(equalToConstant: 200.0),
+            fileImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            fileImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            fileImageView.widthAnchor.constraint(equalToConstant: 100.0),
+            fileImageView.heightAnchor.constraint(equalToConstant: 100.0),
             
             dateLabel.topAnchor.constraint(equalTo: fileImageView.bottomAnchor, constant: 10.0),
             dateLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10.0),

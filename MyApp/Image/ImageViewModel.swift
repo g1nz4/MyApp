@@ -33,12 +33,22 @@ final class ImageViewModel {
     var onLoadData: ((_ folders: [Folder], _ images: [Image]) -> Void)?
     var onInsertItem: ((Int) -> Void)?
     var onDeleteItem: ((Int) -> Void)?
+    var onDeleteFolder: ((Int) -> Void)?
     var onError: ((String) -> Void)?
     var instanceStorage: ImageStorageProtocol { storage }
 
     init(storage: ImageStorageProtocol, directory: URL? = nil) {
         self.storage = storage
         self.currentDirectory = directory ?? storage.rootDirectory
+    }
+    
+    private func sort<T>(_ items: [T], by name: (T) -> String) -> [T] {
+        let ascending = SettingsStorage.shared.sort
+        return items.sorted {
+            let l = name($0).lowercased()
+            let r = name($1).lowercased()
+            return ascending ? (l < r) : (l > r)
+        }
     }
     
     func changeDirectory(_ directory: URL) {
@@ -70,11 +80,13 @@ final class ImageViewModel {
                 }
                 
                 let loadedImages = imageURLs.map { Image(url: $0) }
+                let sortedFolders = self.sort(folders) { $0.name }
+                let sortedImages = self.sort(loadedImages) {$0.userTitle}
 
                 DispatchQueue.main.async {
-                    self.folders = folders
-                    self.images = loadedImages
-                    self.onLoadData?(folders, loadedImages)
+                    self.folders = sortedFolders
+                    self.images = sortedImages
+                    self.onLoadData?(sortedFolders, sortedImages)
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -109,7 +121,7 @@ final class ImageViewModel {
         }
     }
 
-    func delete(at index: Int) {
+    func deleteImage(at index: Int) {
         guard images.indices.contains(index) else { return }
         let image = images[index]
 
@@ -117,7 +129,7 @@ final class ImageViewModel {
             guard let self = self else { return }
 
             do {
-                try self.storage.deleteImage(at: image.url)
+                try self.storage.deleteItem(at: image.url)
 
                 DispatchQueue.main.async {
                     self.images.remove(at: index)
@@ -145,6 +157,28 @@ final class ImageViewModel {
                 DispatchQueue.main.async {
                     self.folders.append(folder)
                     self.onLoadData?(self.folders, self.images)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.onError?(error.localizedDescription)
+                }
+            }
+        }
+    }
+    
+    func deleteFolder(at index: Int) {
+        guard folders.indices.contains(index) else { return }
+        let folder = folders[index]
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                try storage.deleteItem(at: folder.url)
+
+                DispatchQueue.main.async {
+                    self.folders.remove(at: index)
+                    self.onDeleteFolder?(index)
                 }
             } catch {
                 DispatchQueue.main.async {
