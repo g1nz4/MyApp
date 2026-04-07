@@ -24,9 +24,11 @@ final class LoginViewModel: LoginViewModelProtocol {
     private(set) var mode: LoginMode
     private var firstInput: String?
     
-    private let storage = KeychainStorage.shared
+    private let storage: KeychainStorageProtocol
     
-    init() {
+    init(storage: KeychainStorageProtocol) {
+        self.storage = storage
+        
         if storage.isHasPassword() {
             mode = .login
         } else {

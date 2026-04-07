@@ -1,11 +1,21 @@
 import Foundation
 import KeychainAccess
 
-final class KeychainStorage {
-    static let shared = KeychainStorage()
+protocol KeychainStorageProtocol {
+    func isHasPassword() -> Bool
+    func savePassword(_ password: String) throws
+    func isValidatePassword(password: String) -> Bool
+    func removePassword() throws
+}
+
+final class KeychainStorage: KeychainStorageProtocol {
     
-    private let keychain = Keychain(service: "com.myapp.keychain-storage")
+    private let keychain: Keychain
     private let passwordKey = "user_password"
+    
+    init(service: String = "com.myapp.keychain-storage") {
+        self.keychain = Keychain(service: service)
+    }
     
     func isHasPassword() -> Bool {
         (try? keychain.get(passwordKey)) != nil

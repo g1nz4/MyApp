@@ -24,7 +24,7 @@ final class MainTabBarController: UITabBarController {
             image: UIImage(systemName: "gearshape"),
             selectedImage: UIImage(systemName: "gearshape.fill")
         )
-        viewControllers = [settingsNav, imageNav]
-        selectedIndex = 1
+        viewControllers = [imageNav, settingsNav]
+        selectedIndex = 0
     }
 }

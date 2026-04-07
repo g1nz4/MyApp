@@ -31,7 +31,8 @@ final class SettingsViewController: UITableViewController {
     }
     
     private func presentChangePassword() {
-        let viewModel = LoginViewModel()
+        let storage = KeychainStorage()
+        let viewModel = LoginViewModel(storage: storage)
         viewModel.updateMode(.create(firstStep: true))
         let vc = LoginViewController(viewModel: viewModel)
         let nav = UINavigationController(rootViewController: vc)

@@ -2,7 +2,7 @@ import UIKit
 
 final class LoginViewController: UIViewController {
     
-    private let viewModel: LoginViewModel
+    private let viewModel: LoginViewModelProtocol
     
     private lazy var passwordTextField: UITextField = {
         let textField = UITextField()
@@ -36,8 +36,13 @@ final class LoginViewController: UIViewController {
         return stack
     }()
     
-    init(viewModel: LoginViewModel = LoginViewModel()) {
-        self.viewModel = viewModel
+    init(viewModel: LoginViewModelProtocol? = nil) {
+        if let vm = viewModel {
+            self.viewModel = vm
+        } else {
+            let storage: KeychainStorageProtocol = KeychainStorage()
+            self.viewModel = LoginViewModel(storage: storage)
+        }
         super.init(nibName: nil, bundle: nil)
     }
     
