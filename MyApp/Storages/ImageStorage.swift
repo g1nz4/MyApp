@@ -5,7 +5,7 @@ protocol ImageStorageProtocol {
     
     func loadImages(in directory: URL) throws -> [URL]
     func addImage(imageData: Data, name: String?, in directory: URL) throws -> URL
-    func deleteImage(at url: URL) throws
+    func deleteItem(at url: URL) throws
     func addFolder(name: String, in directory: URL) throws -> URL
 }
 
@@ -50,7 +50,7 @@ final class ImageStorage: ImageStorageProtocol {
         return url
     }
     
-    func deleteImage(at url: URL) throws {
+    func deleteItem(at url: URL) throws {
         try FileManager.default.removeItem(at: url)
     }
     

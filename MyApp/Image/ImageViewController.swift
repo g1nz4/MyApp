@@ -46,6 +46,7 @@ final class ImageViewController: UIViewController {
         setupUI()
         bindingViewModel()
         viewModel.load()
+        addObserver()
     }
     
     private func setupNavigationBar() {
@@ -98,6 +99,13 @@ final class ImageViewController: UIViewController {
             self.tableView.deleteRows(at: [indexPath], with: .automatic)
         }
         
+        viewModel.onDeleteFolder = { [weak self] index in
+            guard let self = self else { return }
+            
+            let indexPath = IndexPath(row: index, section: 0)
+            self.tableView.deleteRows(at: [indexPath], with: .automatic)
+        }
+        
         viewModel.onError = { [weak self] message in
             guard let self = self else { return }
             
@@ -116,6 +124,19 @@ final class ImageViewController: UIViewController {
                 self.viewModel.add(imageData: data, name: title)
                 self.selectedData = nil
         }
+    }
+    
+    private func addObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(sortOrderChanged),
+            name: .sortChanged,
+            object: nil
+        )
+    }
+    
+    @objc private func sortOrderChanged() {
+        viewModel.load()
     }
     
     @objc private func addTapped() {
@@ -188,9 +209,10 @@ extension ImageViewController: UITableViewDelegate {
         } else {
             let index = indexPath.row - viewModel.folders.count
             let image = viewModel.images[index]
-            let detailsVC = DetailsViewController(image: image)
-            detailsVC.modalPresentationStyle = .formSheet
-            navigationController?.present(detailsVC, animated: true)
+            let vc = DetailsViewController(image: image)
+            let nav = UINavigationController(rootViewController: vc)
+            nav.modalPresentationStyle = .formSheet
+            present(nav, animated: true)
         }
     }
     
@@ -198,15 +220,30 @@ extension ImageViewController: UITableViewDelegate {
         _ tableView: UITableView,
         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
-        let action = UIContextualAction(
-            style: .destructive,
-            title: "Delete"
-        ) {  [weak self] _, _, completion in
-            self?.viewModel.delete(at: indexPath.row)
-            completion(true)
+        if indexPath.row < viewModel.folders.count {
+            let folderIndex = indexPath.row
+            let action = UIContextualAction(
+                style: .destructive,
+                title: "Delete"
+            ) {  [weak self] _, _, completion in
+                self?.viewModel.deleteFolder(at: folderIndex)
+                completion(true)
+            }
+            
+            return UISwipeActionsConfiguration(actions: [action])
+            
+        } else {
+            let imageIndex = indexPath.row - viewModel.folders.count
+            let action = UIContextualAction(
+                style: .destructive,
+                title: "Delete"
+            ) {  [weak self] _, _, completion in
+                self?.viewModel.deleteImage(at: imageIndex)
+                completion(true)
+            }
+            
+            return UISwipeActionsConfiguration(actions: [action])
         }
-        
-        return UISwipeActionsConfiguration(actions: [action])
     }
 }
 

@@ -14,7 +14,7 @@ final class TextPicker {
         with message: String
     ) {
         let alert = UIAlertController(
-            title: "Error",
+            title: nil,
             message: message,
             preferredStyle: .alert
         )

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EAC9E3682F818DA500EFF039 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = EAC9E3672F818DA500EFF039 /* KeychainAccess */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		EA5829862F7A9A8300EFBEAA /* MyApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EAC9E3682F818DA500EFF039 /* KeychainAccess in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = MyApp;
 			packageProductDependencies = (
+				EAC9E3672F818DA500EFF039 /* KeychainAccess */,
 			);
 			productName = MyApp;
 			productReference = EA5829862F7A9A8300EFBEAA /* MyApp.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = EA58297D2F7A9A8300EFBEAA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EAC9E3662F818DA500EFF039 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EA5829872F7A9A8300EFBEAA /* Products */;
 			projectDirPath = "";
@@ -347,6 +356,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		EAC9E3662F818DA500EFF039 /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EAC9E3672F818DA500EFF039 /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EAC9E3662F818DA500EFF039 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EA58297E2F7A9A8300EFBEAA /* Project object */;
 }
